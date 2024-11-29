@@ -12,7 +12,7 @@ spec:
           - clusters:
               values:
                 addonChart: base
-                addonChartVersion: 1.24.1
+                addonChartVersion: 1.20.1
                 addonChartNamespace: istio-system
                 addonChartRepository: https://istio-release.storage.googleapis.com/charts
               selector:
@@ -36,71 +36,3 @@ spec:
             releaseName: '{{values.addonChart}}'
             ignoreMissingValueFiles: true
             valueFiles:
-              - $values/{{metadata.annotations.addons_repo_basepath}}values/{{values.addonChart}}/values.yaml
-            values: |
-              defaultRevision: "default"
-      destination:
-        namespace: '{{values.addonChartNamespace}}'
-        name: 'istio-{name}}'
-      syncPolicy:
-        automated: {}
-        syncOptions:
-          - CreateNamespace=true
-          - ServerSideApply=true  # For handling big CRDs.
-          - ApplyOutOfSyncOnly=true
-
-
-
-
-
-helm_releases = {
-    istio-base = {
-      chart         = "base"
-      chart_version = local.istio_chart_version
-      repository    = local.istio_chart_url
-      name          = "istio-base"
-      namespace     = kubernetes_namespace_v1.istio_system.metadata[0].name
-    }
-
-    istiod = {
-      chart         = "istiod"
-      chart_version = local.istio_chart_version
-      repository    = local.istio_chart_url
-      name          = "istiod"
-      namespace     = kubernetes_namespace_v1.istio_system.metadata[0].name
-
-      set = [
-        {
-          name  = "meshConfig.accessLogFile"
-          value = "/dev/stdout"
-        }
-      ]
-    }
-
-    istio-ingress = {
-      chart            = "gateway"
-      chart_version    = local.istio_chart_version
-      repository       = local.istio_chart_url
-      name             = "istio-ingress"
-      namespace        = "istio-ingress" # per https://github.com/istio/istio/blob/master/manifests/charts/gateways/istio-ingress/values.yaml#L2
-      create_namespace = true
-
-      values = [
-        yamlencode(
-          {
-            labels = {
-              istio = "ingressgateway"
-            }
-            service = {
-              annotations = {
-                "service.beta.kubernetes.io/aws-load-balancer-type"            = "external"
-                "service.beta.kubernetes.io/aws-load-balancer-nlb-target-type" = "ip"
-                "service.beta.kubernetes.io/aws-load-balancer-scheme"          = "internet-facing"
-                "service.beta.kubernetes.io/aws-load-balancer-attributes"      = "load_balancing.cross_zone.enabled=true"
-              }
-            }
-          }
-        )
-      ]
-    }
-  }
