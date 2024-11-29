@@ -57,7 +57,7 @@ spec:
                 enabled: true
       destination:
         namespace: '{{values.addonChartNamespace}}'
-        name: 'istio-{{name}}'
+        name: '{{name}}'
       syncPolicy:
         automated: {}
         syncOptions:
