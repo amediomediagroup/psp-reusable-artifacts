@@ -1,3 +1,4 @@
+---
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
@@ -13,13 +14,25 @@ spec:
               values:
                 addonChart: istiod
                 addonChartVersion: 1.24.1
-                addonChartNamespace: istio-system
                 addonChartRepository: https://istio-release.storage.googleapis.com/charts
+                addonChartNamespace: istio-system
               selector:
                 matchExpressions:
                   - key: enable_istiod
                     operator: In
                     values: ['true']
+          - clusters:
+              selector:
+                matchLabels:
+                  environment: staging
+              values:
+                addonChartVersion: 1.24.1
+          - clusters:
+              selector:
+                matchLabels:
+                  environment: prod
+              values:
+                addonChartVersion: 1.24.1
   template:
     metadata:
       name: addon-{{name}}-{{values.addonChart}}
@@ -36,15 +49,18 @@ spec:
             releaseName: '{{values.addonChart}}'
             ignoreMissingValueFiles: true
             valueFiles:
-              - $values/{{metadata.annotations.addons_repo_basepath}}values/{{values.addonChart}}/values.yaml
+              - $values/{{metadata.annotations.addons_repo_basepath}}environments/default/addons/{{values.addonChart}}/values.yaml
+              - $values/{{metadata.annotations.addons_repo_basepath}}environments/{{metadata.labels.environment}}/addons/{{values.addonChart}}/values.yaml
+              - $values/{{metadata.annotations.addons_repo_basepath}}clusters/{{name}}/addons/{{values.addonChart}}/values.yaml
             values: |
-              defaultRevision: "default"
+              admissionController:
+                enabled: true
       destination:
         namespace: '{{values.addonChartNamespace}}'
-        name: 'istio-{name}}'
+        name: 'istio-{{name}}'
       syncPolicy:
         automated: {}
         syncOptions:
           - CreateNamespace=true
-          - ServerSideApply=true  # For handling big CRDs.
+          - ServerSideApply=true  # Big CRDs.
           - ApplyOutOfSyncOnly=true
