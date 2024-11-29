@@ -12,7 +12,7 @@ spec:
           - clusters:
               values:
                 addonChart: base
-                addonChartVersion: 1.20.1
+                addonChartVersion: 1.24.1
                 addonChartNamespace: istio-system
                 addonChartRepository: https://istio-release.storage.googleapis.com/charts
               selector:
@@ -20,6 +20,12 @@ spec:
                   - key: enable_istio_base
                     operator: In
                     values: ['true']
+          - clusters:
+              selector:
+                matchLabels:
+                  environment: staging
+                values:
+                  addonChartVersion: 1.24.1
   template:
     metadata:
       name: addon-{{name}}-{{values.addonChart}}
